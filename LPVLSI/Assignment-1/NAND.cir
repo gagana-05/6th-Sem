@@ -1,0 +1,68 @@
+* NAND gate
+* model file
+.include ./t14y_tsmc_025_level3.txt
+**Pull up network**
+
+m2 vdd a out vdd cmosp w=25u l=1u
+m3 vdd b out vdd cmosp w=25u l=1u
+
+**Pull down network**
+m0 out a x 0 cmosn w=10u l=1u
+m1 x b 0 0 cmosn w=10u l=1u
+
+v_dd vdd 0 5
+v_a a 0 5 pulse(0 5 0 0.1n 0.1n 4n 8n)
+v_b b 0 5 pulse(0 5 0 0.1n 0.1n 2n 4n)
+
+* output
+* VTC Characterisitics
+
+.control 
+dc v_a 0 5 1 v_dd 0 5 1
+run 
+setplot dc1
+plot -v_dd#branch
+
+dc v_b 0 5 1 v_dd 0 5 1
+run 
+setplot dc2
+plot -v_dd#branch
+.endc
+
+.control
+tran 0.1n 8n
+setplot tran1
+plot a b
+plot out
+plot b a out
+
+meas tran Vmax MAX out from=6.2n to=7.8n
+meas tran Vmin MIN out from=6.2n to=7.8n
+let v10 = Vmin + 0.1*(Vmax-Vmin)
+let v90 = Vmin + 0.9*(Vmax-Vmin)
+let v50 = Vmin + 0.5*(Vmax-Vmin)
+
+* print v10, v50, v90
+
+meas tran trise trig out val=v10 rise=1 targ out val=v90 rise=1
+* print trise
+meas tran tfall trig out val=v90 fall=1 targ out val=v10 fall=1
+* print tfall
+
+meas tran tphl_a trig a val=2.5 rise=1 targ out val=v50 fall=1
+meas tran tplh_a trig a val=2.5 fall=1 targ out val=v50 rise=1
+let tp_a = (tphl_a+tplh_a)/2
+
+
+meas tran tphl_b trig b val=2.5 rise=1 targ out val=v50 fall=1
+meas tran tplh_b trig b val=2.5 fall=1 targ out val=v50 rise=1
+let tp_b = (tphl_b+tplh_b)/2
+
+
+meas tran tphl_out trig out val=2.5 rise=1 targ out val=v50 fall=1
+meas tran tplh_out trig out val=2.5 fall=1 targ out val=v50 rise=1
+let tp_out = (tphl_out+tplh_out)/2
+print tp_out, tp_a, tp_b
+
+.endc
+.end

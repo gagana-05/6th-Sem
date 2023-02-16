@@ -1,0 +1,41 @@
+*cmos inverter
+*model files
+.include ./t14y_tsmc_025_level3.txt
+
+m2 out in vdd vdd cmosp l=1u w=60u
+m1 out in 0 0 cmosn l=1u w=20u
+c0 out 0 1u
+
+v_dd vdd 0 dc 5
+
+v_in in 0 dc 0 pulse(0 5 0 1 1 25 50)
+
+.tran 0.01 4s
+.control
+foreach cap 1u 50u 500u
+alter c0 = $cap
+run
+end
+alter c0 = 1u
+.endc
+
+.control
+plot tran1.in tran1.out tran2.out tran3.out
+plot tran1.v_dd#branch*(-50) tran2.v_dd#branch*(-50) tran3.v_dd#branch*(-50)
+
+let Isc1=tran1.v_dd#branch*(-50)
+let Isc2=tran2.v_dd#branch*(-50)
+let Isc3=tran3.v_dd#branch*(-50)
+
+
+meas tran max1 MAX Isc1 from=0.01 to=4s
+meas tran max2 MAX Isc2 from=0.01 to=4s
+meas tran max3 MAX Isc3 from=0.01 to=4s
+
+print max1
+print max2
+print max3
+
+
+.endc
+.end
