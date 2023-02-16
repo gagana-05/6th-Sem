@@ -1,0 +1,82 @@
+* NAND2 + NOR2 model
+* model file
+.include ./t14y_tsmc_025_level3.txt
+
+* NAND2 model A,B
+**Pull up network**
+m0 vdd a out_ab vdd cmosp l=1u w=2.5u
+m1 vdd b out_ab vdd cmosp l=1u w=2.5u
+
+**Pull down network**
+m2 out_ab a xa 0 cmosn l=1u w=1u
+m3 xa b 0 0 cmosn l=1u w=1u
+
+* NAND2 model C,D
+**Pull up network**
+m4 vdd c out_cd vdd cmosp l=1u w=2.5u
+m5 vdd d out_cd vdd cmosp l=1u w=2.5u
+
+**Pull down network**
+m6 out_cd c xc 0 cmosn l=1u w=1u
+m7 xc d 0 0 cmosn l=1u w=1u
+
+* NOR2 model 
+**Pull up network**
+m10 vdd out_ab x vdd cmosp l=1u w=2.5u
+m11 x out_cd out_o vdd cmosp l=1u w=2.5u
+
+**Pull down network**
+m8 out_o out_ab 0 0 cmosn l=1u w=1u
+m9 out_o out_cd 0 0 cmosn l=1u w=1u
+
+v_dd vdd 0 5
+v_a a 0 5 pulse(0 5 0 0.1n 0.1n 2n 4n)
+v_b b 0 5 pulse(0 5 0 0.1n 0.1n 4n 8n)
+v_c c 0 5 pulse(0 5 0 0.1n 0.1n 8n 16n)
+v_d d 0 5 pulse(0 5 0 0.1n 0.1n 16n 32n)
+
+.control
+tran 0.01n 32n
+plot a b c d out_o
+plot out_o
+plot -i(v_dd)
+
+* Propogation delay
+meas tran Vmax MAX out_o from=0.01n to=1.8n
+meas tran Vmin MIN out_o from=2.2n to=4n
+let v10 = Vmin + 0.1*(Vmax-Vmin)
+let v90 = Vmin + 0.9*(Vmax-Vmin)
+let v50 = Vmin + 0.5*(Vmax-Vmin)
+
+
+meas tran trise trig out_o val=v10 rise=1 targ out_o val=v90 rise=1
+meas tran tfall trig out_o val=v90 fall=1 targ out_o val=v10 fall=1
+meas tran tphl_5v trig a val=2.5 rise=1 targ out_o val=v50 fall=1
+meas tran tplh_5v trig a val=2.5 fall=1 targ out_o val=v50 rise=1
+
+meas tran tphl_33v trig a val=1.6 rise=1 targ out_o val=v50 fall=1
+meas tran tplh_33v trig a val=1.6 fall=1 targ out_o val=v50 rise=1
+
+meas tran tphl_8v trig a val=4 rise=1 targ out_o val=v50 fall=1
+meas tran tplh_8v trig a val=4 fall=1 targ out_o val=v50 rise=1
+
+let tp_5v = (tphl_5v+tplh_5v)/2
+let tp_33v = (tphl_33v + tplh_33v)/2
+let tp_8v = (tphl_8v + tplh_8v)/2
+
+print tp_5v tp_33v tp_8v
+.endc
+
+
+.control
+let i_vdd= -i(v_dd)
+meas tran Iavg AVG i_vdd from=0.01n to=32n
+let power_5v = Iavg*5
+let power_33v = Iavg*3.3
+let power_8v = Iavg*8
+print power_5v power_33v power_8v
+.endc
+.end
+
+
+
